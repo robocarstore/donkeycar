@@ -349,3 +349,4 @@ REALSENSE_D435_ID = None        # serial number of camera or None if you only ha
 STOP_SIGN_DETECTOR = False
 STOP_SIGN_MIN_SCORE = 0.2
 STOP_SIGN_SHOW_BOUNDING_BOX = True
+STOP_SIGN_MAX_REVERSE_COUNT = 20
