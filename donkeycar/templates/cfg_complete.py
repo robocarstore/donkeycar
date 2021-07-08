@@ -354,4 +354,4 @@ STOP_SIGN_SHOW_BOUNDING_BOX = True
 INFO_OVERLAY = True
 
 # FPS counter
-SHOW_FPS = False
+SHOW_FPS = True
