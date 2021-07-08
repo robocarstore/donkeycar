@@ -15,24 +15,24 @@ class InfoOverlayLogger(object):
             input = str(input)[:4]
         return input
         
-    def run(self, fps, userMode, userThrottle, userAngle, pilotThrottle, pilotAngle):
+    def run(self, fps, user_mode, user_throttle, user_angle, pilot_throttle, pilot_angle):
         self.add("current fps = {}".format(fps))
         
         # truncate input so it won't cover up the screen
-        userThrottle = self.truncate(userThrottle)
-        userAngle = self.truncate(userAngle)
-        pilotThrottle =  self.truncate(pilotThrottle)
-        pilotAngle = self.truncate(pilotAngle)
+        user_throttle = self.truncate(user_throttle)
+        user_angle = self.truncate(user_angle)
+        pilot_throttle =  self.truncate(pilot_throttle)
+        pilot_angle = self.truncate(pilot_angle)
         
-        if userMode == "user":
-            self.add("user throttle = {}".format(userThrottle))
-            self.add("user angle = {}".format(userAngle))
-        elif userMode == "local":
-            self.add("pilot throttle = {}".format(pilotThrottle))
-            self.add("pilot angle = {}".format(pilotAngle))
-        elif userMode == "local_angle":
-            self.add("user throttle = {}".format(userThrottle))
-            self.add("pilot angle = {}".format(pilotAngle))
+        if user_mode == "user":
+            self.add("user throttle = {}".format(user_throttle))
+            self.add("user angle = {}".format(user_angle))
+        elif user_mode == "local":
+            self.add("pilot throttle = {}".format(pilot_throttle))
+            self.add("pilot angle = {}".format(pilot_angle))
+        elif user_mode == "local_angle":
+            self.add("user throttle = {}".format(user_throttle))
+            self.add("pilot angle = {}".format(pilot_angle))
             
         return info_list
         
@@ -43,15 +43,15 @@ class InfoOverlayWritter(object):
     ''' 
     
     def __init__(self, w, h):        
-        self.imgWidth = w
-        self.imgHeight = h
+        self.img_width = w
+        self.img_height = h
         
         # Overlay text's properties
-        self.textOffset = (5, 100)
+        self.text_offset = (5, 100)
         self.font = cv2.FONT_HERSHEY_SIMPLEX
-        self.fontSizeMultiplier = 2
-        self.textColor = (255, 0, 0)
-        self.textThickness = 1
+        self.font_size_multiplier = 2
+        self.text_color = (255, 0, 0)
+        self.text_thickness = 1
         
     def debug(self):
         print("total info list size = " + str(len(info_list)))
@@ -59,15 +59,15 @@ class InfoOverlayWritter(object):
             print("writing info '{}' to img".format(info))              
         
     def writeToImg(self, img_arr, infos):
-        textOrgX = int(self.textOffset[0])
-        textOrgY = int(self.textOffset[1] * self.imgHeight/1000) # Text's gap relative to the image size 
+        text_x = int(self.text_offset[0])
+        text_y = int(self.text_offset[1] * self.img_height/1000) # Text's gap relative to the image size 
         font = self.font
-        fontSize = self.fontSizeMultiplier * self.imgWidth/1000 # Font's size relative to the image size
-        color = self.textColor
-        thickness = self.textThickness
+        font_size = self.font_size_multiplier * self.img_width/1000 # Font's size relative to the image size
+        color = self.text_color
+        thickness = self.text_thickness
 
         for idx, info in enumerate(infos):
-            cv2.putText(img_arr, info, (textOrgX, textOrgY * (idx + 1)), font, fontSize, color, thickness)
+            cv2.putText(img_arr, info, (text_x, text_y * (idx + 1)), font, font_size, color, thickness)
 
         # self.debug()
         return img_arr     
