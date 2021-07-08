@@ -187,6 +187,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
     #This web controller will create a web server that is capable
     #of managing steering, throttle, and modes, and more.
+
+    if cfg.SHOW_FPS:
+        from donkeycar.parts.fps import FpsTimer, FpsLogger
+        V.add(FpsTimer(), outputs=["fps/current", "fps/fps_list"])
+        # V.add(FpsLogger(), inputs=["fps/current", "fps/fps_list"])
+    
+    if cfg.INFO_OVERLAY:
+        from donkeycar.parts.info_overlay import InfoOverlayLogger, InfoOverlayWritter
+        V.add(InfoOverlayLogger(), inputs=['fps/current', 'user/mode', 'user/throttle', 'user/angle', 'pilot/throttle', 'pilot/angle'], outputs=['info/info_list'])
+        V.add(InfoOverlayWritter(cfg.IMAGE_W, cfg.IMAGE_H), inputs=['cam/image_array'], outputs=['cam/image_array'])
     
     if hasattr(cfg, "WEB_CHECK_CAR_INERT"):
         ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE, check_inert=cfg.WEB_CHECK_CAR_INERT)
@@ -465,7 +475,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     
     if cfg.STOP_SIGN_DETECTOR:
         from donkeycar.parts.object_detector.stop_sign_detector import StopSignDetector
-        V.add(StopSignDetector(cfg.STOP_SIGN_MIN_SCORE, cfg.STOP_SIGN_SHOW_BOUNDING_BOX), inputs=['cam/image_array', 'pilot/throttle'], outputs=['pilot/throttle', 'cam/image_array'])
+        V.add(StopSignDetector(cfg.STOP_SIGN_MIN_SCORE, cfg.STOP_SIGN_SHOW_BOUNDING_BOX, cfg.STOP_SIGN_MAX_REVERSE_COUNT), inputs=['cam/image_array', 'pilot/throttle'], outputs=['pilot/throttle', 'cam/image_array'])        
+        V.add(ThrottleFilter(), inputs=['pilot/throttle'], outputs=['pilot/throttle'])
 
     #Choose what inputs should change the car.
     class DriveMode:
