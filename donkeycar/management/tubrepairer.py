@@ -38,7 +38,7 @@ class TubRepairer(object):
     def __cleansing(self):
         import glob
         _ = glob.glob(f'{self.tub.base_path}/catalog_*.catalog')
-        tem = [x.replace(f'{self.tub.base_path}/', '') for x in _ if path.getsize(x) != 0]
+        tem = [path.split(x)[-1] for x in _ if path.getsize(x) != 0]
 
         dir_image = listdir(self.tub.images_base_path)
 
