@@ -694,7 +694,7 @@ class Gui(BaseCommand):
 
 class TubRepairShell(BaseCommand):
     """
-    Clean up 0 byte image and manifest
+    Clean up 0 byte image and catalog
     """
     # example command:
     #     donkey tubrepair --tub ~/mycar/data/tub_4_21-06-11/ ~/mycar/data/tub_3_21-06-11/
@@ -707,7 +707,7 @@ class TubRepairShell(BaseCommand):
 
     def run(self, args):
         """
-        Remove 0 byte image and update catalog
+        Clean up 0 byte image and catalog
         """
         args, parser = self.parse_args(args)
 
