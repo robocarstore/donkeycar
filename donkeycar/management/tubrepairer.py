@@ -30,6 +30,7 @@ class TubRepairer(object):
         for _ in tub_paths:
             self.tub = Tub(_)
             md, useless_index, health = self.__cleansing()
+            if health == 0: continue
             self.tub.delete_records(useless_index)
             self.__delete_zero_byte_image()
             self.tub.update_catalog(catalog=md)
@@ -38,6 +39,7 @@ class TubRepairer(object):
         import glob
         _ = glob.glob(f'{self.tub.base_path}/catalog_*.catalog')
         tem = [path.split(x)[-1] for x in _ if path.getsize(x) != 0]
+        zero_byte_manifest = [path.split(x)[-1] for x in _ if path.getsize(x) == 0]
 
         dir_image = listdir(self.tub.images_base_path)
 
@@ -47,8 +49,8 @@ class TubRepairer(object):
 
         zero = __getZero(dir_image)
 
-        # if len(sorted(tem)) == 0 and len(zero) == 0:  # health check
-        #     return '', '', 0
+        if len(zero_byte_manifest) == 0 and len(zero) == 0:  # health check
+            return '', '', 0
 
         return sorted(tem), zero, 1
 
