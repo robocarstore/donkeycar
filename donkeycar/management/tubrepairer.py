@@ -35,7 +35,7 @@ class TubRepairer(object):
         import glob
         _ = glob.glob(f'{self.tub.base_path}/catalog_*.catalog')
         valid_manifest = [path.split(x)[-1] for x in _ if path.getsize(x) != 0]
-        invalid_manifest = [path.split(x)[-1] for x in _ if path.getsize(x) == 0]
+        invalid_manifest = {remove(x) for x in _ if path.getsize(x) == 0}
 
         dir_image = listdir(self.tub.images_base_path)
 
@@ -50,8 +50,8 @@ class TubRepairer(object):
         try:
             {remove(f'{self.tub.images_base_path}/{x}_cam_image_array_.jpg') for x in self.tub.manifest.deleted_indexes}
         except:
-            print('Nothing to remove')
+            print('Already Removed')
 
-        self.tub.update_catalog(catalog=valid_manifest)
+        self.tub.update_catalog(catalog=sorted(valid_manifest))
 
         return
