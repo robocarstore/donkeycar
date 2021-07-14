@@ -699,7 +699,7 @@ class TubRepairShell(BaseCommand):
     @staticmethod
     def parse_args(args):
         parser = argparse.ArgumentParser(prog='tubrepair')
-        parser.add_argument('--tub', help='The tub to be repair')
+        parser.add_argument('--tub', nargs='+', help='The tub to be repair')
         parsed_args = parser.parse_args(args)
         return parsed_args, parser
 
