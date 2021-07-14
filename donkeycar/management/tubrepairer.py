@@ -29,8 +29,8 @@ class TubRepairer(object):
 
         for _ in tub_paths:
             self.tub = Tub(_)
-            md, useless_index, health = self.__cleansing()
-            if health == 0: continue
+            md, useless_index = self.__cleansing()
+            # if health == 0: continue
             self.tub.delete_records(useless_index)
             self.__delete_zero_byte_image()
             self.tub.update_catalog(catalog=md)
@@ -48,10 +48,10 @@ class TubRepairer(object):
 
         zero = __getZero(dir_image)
 
-        if len(zero) == 0:  # health check
-            return tem, '', 0
+        # if len(zero) == 0:  # health check
+        #     return sorted(tem), '', 0
 
-        return sorted(tem), zero, 1
+        return sorted(tem), zero
 
     def __delete_zero_byte_image(self):
         try:
