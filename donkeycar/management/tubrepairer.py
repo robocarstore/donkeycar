@@ -38,8 +38,8 @@ class TubRepairer(object):
     def __cleansing(self):
         import glob
         _ = glob.glob(f'{self.tub.base_path}/catalog_*.catalog')
-        tem = [path.split(x)[-1] for x in _ if path.getsize(x) != 0]
-        zero_byte_manifest = [path.split(x)[-1] for x in _ if path.getsize(x) == 0]
+        valid_manifest = [path.split(x)[-1] for x in _ if path.getsize(x) != 0]
+        invalid_manifest = [path.split(x)[-1] for x in _ if path.getsize(x) == 0]
 
         dir_image = listdir(self.tub.images_base_path)
 
@@ -47,12 +47,12 @@ class TubRepairer(object):
             return {int(re.findall('\d{1,}', x)[0]) for x in dir_image if
                     path.getsize(f'{self.tub.images_base_path}/{x}') == 0}
 
-        zero = __getZero(dir_image)
+        invalid_image = __getZero(dir_image)
 
-        if len(zero_byte_manifest) == 0 and len(zero) == 0:  # health check
+        if len(invalid_manifest) == 0 and len(invalid_image) == 0:  # health check
             return '', '', 0
 
-        return sorted(tem), zero, 1
+        return sorted(valid_manifest), invalid_image, 1
 
     def __delete_zero_byte_image(self):
         try:
