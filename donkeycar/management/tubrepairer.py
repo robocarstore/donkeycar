@@ -14,7 +14,7 @@ class TubRepairer(object):
     def __init__(self, args, parser):
         self.args = args
         self.parser = parser
-        self.tub = Tub(args.tub)
+        self.tub = None
 
     def run(self):
         """
@@ -25,11 +25,15 @@ class TubRepairer(object):
             self.parser.print_help()
             return
 
-        md, useless_index, health = self.__cleansing()
-        if health == 0: return 'Tub is health'
-        self.tub.delete_records(useless_index)
-        self.__delete_zero_byte_image()
-        self.tub.update_catalog(catalog=md)
+        tub_paths = list(self.args.tub)
+
+        for _ in tub_paths:
+            self.tub = Tub(_)
+            md, useless_index, health = self.__cleansing()
+            if health == 0: pass
+            self.tub.delete_records(useless_index)
+            self.__delete_zero_byte_image()
+            self.tub.update_catalog(catalog=md)
 
     def __cleansing(self):
         import glob
