@@ -42,6 +42,8 @@ class TubRepairer(object):
         invalid_image = {int(re.findall('\d{1,}', x)[0]) for x in dir_image if
                          path.getsize(f'{self.tub.images_base_path}/{x}') == 0}
 
+        self.tub.delete_records(invalid_image)
+
         if len(invalid_manifest) == 0 and len(invalid_image) == 0:  # health check
             return
 
