@@ -48,7 +48,7 @@ class TubRepairer(object):
 
         zero = __getZero(dir_image)
 
-        if len(sorted(tem)) == 0 and len(zero) == 0:  # health check
+        if len(zero) == 0:  # health check
             return '', '', 0
 
         return sorted(tem), zero, 1
