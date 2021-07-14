@@ -49,8 +49,9 @@ class TubRepairer(object):
 
         try:
             {remove(f'{self.tub.images_base_path}/{x}_cam_image_array_.jpg') for x in self.tub.manifest.deleted_indexes}
-        except:
-            print('Already Removed')
+        except Exception as e:
+            print(e)
+            return
 
         self.tub.update_catalog(catalog=sorted(valid_manifest))
 
