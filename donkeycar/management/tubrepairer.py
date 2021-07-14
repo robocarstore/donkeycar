@@ -29,11 +29,7 @@ class TubRepairer(object):
 
         for _ in tub_paths:
             self.tub = Tub(_)
-            md, useless_index, health = self.__cleansing()
-            if health == 0: continue
-            self.tub.delete_records(useless_index)
-            self.__delete_zero_byte_image()
-            self.tub.update_catalog(catalog=md)
+            self.__cleansing()
 
     def __cleansing(self):
         import glob
@@ -43,19 +39,17 @@ class TubRepairer(object):
 
         dir_image = listdir(self.tub.images_base_path)
 
-        def __getZero(_):
-            return {int(re.findall('\d{1,}', x)[0]) for x in dir_image if
-                    path.getsize(f'{self.tub.images_base_path}/{x}') == 0}
-
-        invalid_image = __getZero(dir_image)
+        invalid_image = {int(re.findall('\d{1,}', x)[0]) for x in dir_image if
+                         path.getsize(f'{self.tub.images_base_path}/{x}') == 0}
 
         if len(invalid_manifest) == 0 and len(invalid_image) == 0:  # health check
-            return '', '', 0
+            return
 
-        return sorted(valid_manifest), invalid_image, 1
-
-    def __delete_zero_byte_image(self):
         try:
             {remove(f'{self.tub.images_base_path}/{x}_cam_image_array_.jpg') for x in self.tub.manifest.deleted_indexes}
         except:
             print('Nothing to remove')
+
+        self.tub.update_catalog(catalog=valid_manifest)
+
+        return
