@@ -694,8 +694,10 @@ class Gui(BaseCommand):
 
 class TubRepairShell(BaseCommand):
     """
-    Remove 0 byte image and update catalog
+    Clean up 0 byte image and manifest
     """
+    # example command:
+    #     donkey tubrepair --tub ~/mycar/data/tub_4_21-06-11/ ~/mycar/data/tub_3_21-06-11/
     @staticmethod
     def parse_args(args):
         parser = argparse.ArgumentParser(prog='tubrepair')
