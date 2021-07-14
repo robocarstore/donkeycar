@@ -30,7 +30,7 @@ class TubRepairer(object):
         for _ in tub_paths:
             self.tub = Tub(_)
             md, useless_index, health = self.__cleansing()
-            if health == 0: pass
+            if health == 0: continue
             self.tub.delete_records(useless_index)
             self.__delete_zero_byte_image()
             self.tub.update_catalog(catalog=md)
