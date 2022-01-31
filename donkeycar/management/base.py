@@ -1,4 +1,3 @@
-
 import argparse
 import os
 import shutil
@@ -38,7 +37,6 @@ def make_dir(path):
 
 
 def load_config(config_path):
-
     '''
     load a config from the given path
     '''
@@ -694,6 +692,31 @@ class Gui(BaseCommand):
         main()
 
 
+class TubRepairShell(BaseCommand):
+    """
+    Clean up 0 byte image and catalog
+    """
+    # example command:
+    #     donkey tubrepair --tub ~/mycar/data/tub_4_21-06-11/ ~/mycar/data/tub_3_21-06-11/
+    @staticmethod
+    def parse_args(args):
+        parser = argparse.ArgumentParser(prog='tubrepair')
+        parser.add_argument('--tub', nargs='+', help='The tub to be repair')
+        parsed_args = parser.parse_args(args)
+        return parsed_args, parser
+
+    def run(self, args):
+        """
+        Clean up 0 byte image and catalog
+        """
+        args, parser = self.parse_args(args)
+
+        from donkeycar.management.tubrepairer import TubRepairer
+
+        tr = TubRepairer(args, parser)
+        tr.run()
+
+
 def execute_from_command_line():
     """
     This is the function linked to the "donkey" terminal command.
@@ -710,10 +733,11 @@ def execute_from_command_line():
         'cnnactivations': ShowCnnActivations,
         'update': UpdateCar,
         'train': Train,
-        'trainremote': TrainRemote, 
+        'trainremote': TrainRemote,
         'ui': Gui,
+        'tubrepair': TubRepairShell,
     }
-    
+
     args = sys.argv[:]
 
     if len(args) > 1 and args[1] in commands.keys():
@@ -724,6 +748,6 @@ def execute_from_command_line():
         dk.utils.eprint('Usage: The available commands are:')
         dk.utils.eprint(list(commands.keys()))
 
-    
+
 if __name__ == "__main__":
     execute_from_command_line()
