@@ -356,3 +356,6 @@ INFO_OVERLAY = False
 
 # FPS counter
 SHOW_FPS = False
+
+# Telemetry infos
+TELEMETRY_LOGGER_ENABLE = False
