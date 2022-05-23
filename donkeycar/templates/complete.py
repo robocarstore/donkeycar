@@ -185,6 +185,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             
         V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
 
+    if cfg.TELEMETRY_LOGGER_ENABLE:
+        from donkeycar.parts.telemetry_logger import TelemetryLogger
+        V.add(TelemetryLogger(), inputs=['user/mode', 'user/throttle', 'user/angle', 'pilot/throttle', 'pilot/angle'], outputs=['telemetry/infos'])
+
     if cfg.INFO_OVERLAY:
         from donkeycar.parts.info_overlay import InfoOverlayLogger, InfoOverlayWritter
         V.add(InfoOverlayLogger(), inputs=['fps/current', 'user/mode', 'user/throttle', 'user/angle', 'pilot/throttle', 'pilot/angle'], outputs=['info/info_list'])
@@ -203,8 +207,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     else:
         ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
     
+    telemetry_infos = 'telemetry_infos' if cfg.TELEMETRY_LOGGER_ENABLE else None
+
     V.add(ctr,
-        inputs=['cam/image_array', 'tub/num_records'],
+        inputs=['cam/image_array', 'tub/num_records', telemetry_infos],
         outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
         threaded=True)
         

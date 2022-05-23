@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import time
+from donkeycar.parts.telemetry_logger import TelemetryLogger
 SENSOR_MPU6050 = 'mpu6050'
 SENSOR_MPU9250 = 'mpu9250'
 
@@ -26,7 +27,7 @@ class IMU:
     
     '''
 
-    def __init__(self, addr=0x68, poll_delay=0.0166, sensor=SENSOR_MPU6050, dlp_setting=DLP_SETTING_DISABLED):
+    def __init__(self, addr=0x69, poll_delay=0.0166, sensor=SENSOR_MPU6050, dlp_setting=DLP_SETTING_DISABLED):
         self.sensortype = sensor
         if self.sensortype == SENSOR_MPU6050:
             from mpu6050 import mpu6050 as MPU6050
@@ -40,7 +41,7 @@ class IMU:
             from mpu9250_jmdev.mpu_9250 import MPU9250
 
             self.sensor = MPU9250(
-                address_ak=AK8963_ADDRESS,
+                address_ak=addr,  # AK8963_ADDRESS,
                 address_mpu_master=addr,  # In 0x68 Address
                 address_mpu_slave=None,
                 bus=1,
@@ -51,12 +52,21 @@ class IMU:
             
             if(dlp_setting > 0):
                 self.sensor.writeSlave(CONFIG_REGISTER, dlp_setting)
-            self.sensor.calibrateMPU6500()
-            self.sensor.configure()
 
-        
-        self.accel = { 'x' : 0., 'y' : 0., 'z' : 0. }
-        self.gyro = { 'x' : 0., 'y' : 0., 'z' : 0. }
+        # In case of a Remote I/O error
+        while True:
+            try:
+                self.sensor.reset()
+                self.sensor.calibrateMPU6500()
+                self.sensor.configure()
+            except IOError:
+                print("Cannot detect imu, retrying...")
+                time.sleep(0.1)
+                continue
+            break
+
+        self.accel = {'x': 0., 'y': 0., 'z': 0.}
+        self.gyro = {'x': 0., 'y': 0., 'z': 0.}
         self.mag = {'x': 0., 'y': 0., 'z': 0.}
         self.temp = 0.
         self.poll_delay = poll_delay
@@ -66,7 +76,7 @@ class IMU:
         while self.on:
             self.poll()
             time.sleep(self.poll_delay)
-                
+
     def poll(self):
         try:
             if self.sensortype == SENSOR_MPU6050:
@@ -74,18 +84,42 @@ class IMU:
             else:
                 from mpu9250_jmdev.registers import GRAVITY
                 ret = self.sensor.getAllData()
-                self.accel = { 'x' : ret[1] * GRAVITY, 'y' : ret[2] * GRAVITY, 'z' : ret[3] * GRAVITY }
-                self.gyro = { 'x' : ret[4], 'y' : ret[5], 'z' : ret[6] }
-                self.mag = { 'x' : ret[13], 'y' : ret[14], 'z' : ret[15] }
-                self.temp = ret[16]
+
+                # Check if reading is valid
+                accel_data = sum(ret[1:3]) is not 0
+                gyro_data = sum(ret[4:6]) is not 0
+                mag_data = sum(ret[13:15]) is not 0
+                valid_data = accel_data and gyro_data and mag_data
+
+                if not valid_data:
+                    print(
+                        "Got zero reading for all data! Displaying previous data instead")
+                    self.invalid_count += 1
+                else:
+                    ret = [round(data, 2) for data in ret]
+                    if accel_data:
+                        self.accel = {'x': ret[1] * GRAVITY, 'y': ret[2] * GRAVITY, 'z': ret[3] * GRAVITY}
+                    if gyro_data:
+                        self.gyro = {'x': ret[4], 'y': ret[5], 'z': ret[6]}
+                    if mag_data:
+                        self.mag = {'x': ret[13], 'y': ret[14], 'z': ret[15]}
+                    self.temp = ret[16]
         except:
             print('failed to read imu!!')
-            
+
+    def add_info(self):
+        TelemetryLogger().infos["IMU"]["accel"] = self.accel
+        TelemetryLogger().infos["IMU"]["gyro"] = self.gyro
+        TelemetryLogger().infos["IMU"]["mag"] = self.mag
+        TelemetryLogger().infos["IMU"]["temp"] = self.temp
+
     def run_threaded(self):
+        self.add_info()
         return self.accel['x'], self.accel['y'], self.accel['z'], self.gyro['x'], self.gyro['y'], self.gyro['z'], self.temp
 
     def run(self):
         self.poll()
+        self.add_info()
         return self.accel['x'], self.accel['y'], self.accel['z'], self.gyro['x'], self.gyro['y'], self.gyro['z'], self.temp
 
     def shutdown(self):
@@ -108,4 +142,3 @@ if __name__ == "__main__":
         print(data)
         time.sleep(0.1)
         iter += 1
-     
