@@ -185,10 +185,13 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             
         V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
 
+    if cfg.TELEMETRY_LOGGER_ENABLE:
+        from donkeycar.parts.telemetry_logger import TelemetryLogger
+        V.add(TelemetryLogger(), inputs=['user/mode', 'user/throttle', 'user/angle', 'pilot/throttle', 'pilot/angle'], outputs=['telemetry/infos'])
+
     if cfg.INFO_OVERLAY:
-        from donkeycar.parts.info_overlay import InfoOverlayLogger, InfoOverlayWritter
-        V.add(InfoOverlayLogger(), inputs=['fps/current', 'user/mode', 'user/throttle', 'user/angle', 'pilot/throttle', 'pilot/angle'], outputs=['info/info_list'])
-        V.add(InfoOverlayWritter(cfg.IMAGE_W, cfg.IMAGE_H), inputs=['cam/image_array'], outputs=['cam/image_array'])
+        from donkeycar.parts.info_overlay import InfoOverlayer
+        V.add(InfoOverlayer(cfg.IMAGE_W, cfg.IMAGE_H), inputs=['cam/image_array','telemetry/infos'], outputs=['overlay/image_array'])
 
     if cfg.SHOW_FPS:
         from donkeycar.parts.fps import FpsTimer, FpsLogger
@@ -202,9 +205,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE, check_inert=cfg.WEB_CHECK_CAR_INERT)
     else:
         ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
-    
+
+    image_array = 'overlay/image_array' if cfg.INFO_OVERLAY else 'cam/image_array'
+    telemetry_infos = 'telemetry_infos' if cfg.TELEMETRY_LOGGER_ENABLE else None
+
     V.add(ctr,
-        inputs=['cam/image_array', 'tub/num_records'],
+        inputs=[image_array, 'tub/num_records', telemetry_infos],
         outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
         threaded=True)
         

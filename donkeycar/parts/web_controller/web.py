@@ -114,6 +114,7 @@ class LocalWebController(tornado.web.Application):
         self.port = port
 
         self.num_records = 0
+        self.telemetry_infos = None
         self.wsclients = []
         self.loop = None
 
@@ -151,22 +152,32 @@ class LocalWebController(tornado.web.Application):
                 data = {
                     'num_records': self.num_records
                 }
+
+                # Combine two dict into one
+                if self.telemetry_infos is not None:
+                    data = {**data, **self.telemetry_infos}
+
                 data_str = json.dumps(data)
                 wsclient.write_message(data_str)
             except Exception as e:
                 print(e)
                 pass
 
-    def run_threaded(self, img_arr=None, num_records=0):
+    def run_threaded(self, img_arr=None, num_records=0, telemetry_infos=None):
         self.img_arr = img_arr
         self.num_records = num_records
+        self.telemetry_infos = telemetry_infos
 
         # if throttle and angle are outside the dead zone (i.e. the car is inert), stop recording
         if self.check_inert and self.recording and self.mode == 'user':
             self.recording = (abs(self.throttle) > self.dead_zone or abs(self.angle) > self.dead_zone)
        
+        # Send record count and infos to websocket clients in every loop if telemetry infos exist
+        if telemetry_infos is not None:
+            if self.loop is not None:
+                self.loop.add_callback(self.update_wsclients)
         # Send record count to websocket clients
-        if (self.num_records is not None and self.recording is True):
+        elif (self.num_records is not None and self.recording is True):
             if self.num_records % 10 == 0:
                 if self.loop is not None:
                     self.loop.add_callback(self.update_wsclients)
