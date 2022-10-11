@@ -211,7 +211,10 @@ class LocalWebController(tornado.web.Application):
             logger.debug(str(changes))
             self.loop.add_callback(lambda: self.update_wsclients(changes))
 
-        return self.angle, self.throttle, self.mode, self.recording, buttons
+        if self.throttle == 0:
+            return self.angle, self.throttle, self.mode, False, buttons
+        else:
+            return self.angle, self.throttle, self.mode, self.recording, buttons        
 
     def run(self, img_arr=None, num_records=0, mode=None, recording=None):
         return self.run_threaded(img_arr, num_records, mode, recording)
