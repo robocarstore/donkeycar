@@ -326,6 +326,14 @@ class WebSocketCopilotAPI(tornado.websocket.WebSocketHandler):
             logger.info(f"setting THROTTLE_FORWARD_PWM to {data['THROTTLE_FORWARD_PWM']}")
             self.application.drive_train['throttle'].max_pulse = data['THROTTLE_FORWARD_PWM']
 
+        if data.get('STEERING_LEFT_PWM') is not None:
+            logger.info(f"setting STEERING_LEFT_PWM to {data['STEERING_LEFT_PWM']}")
+            self.application.drive_train['steering'].left_pulse = data['STEERING_LEFT_PWM']
+
+        if data.get('STEERING_RIGHT_PWM') is not None:
+            logger.info(f"setting STEERING_RIGHT_PWM to {data['STEERING_RIGHT_PWM']}")
+            self.application.drive_train['steering'].right_pulse = data['STEERING_RIGHT_PWM']
+
         if data.get('deleteLastXSecond') is not None:
             logger.info(f"deleteing last {data['deleteLastXSecond']} records")
             self.application.tub.delete_last_n_records(data['deleteLastXSecond'])
@@ -355,7 +363,8 @@ class WebSocketCalibrateAPI(tornado.websocket.WebSocketHandler):
         if 'config' in data:
             config = data['config']
             if self.application.drive_train_type == "PWM_STEERING_THROTTLE" \
-                or self.application.drive_train_type == "I2C_SERVO":
+                or self.application.drive_train_type == "I2C_SERVO" \
+                or self.application.drive_train_type == "PIGPIO_PWM":
                 if 'STEERING_LEFT_PWM' in config:
                     self.application.drive_train['steering'].left_pulse = config['STEERING_LEFT_PWM']
 
