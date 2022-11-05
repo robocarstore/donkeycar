@@ -603,7 +603,7 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
     # This web controller will create a web server that is capable
     # of managing steering, throttle, and modes, and more.
     #
-    ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
+    ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE, suppress_zero_throttle_recording=cfg.SUPPRESS_ZERO_THROTTLE_RECORDING)
     V.add(ctr,
           inputs=[input_image, 'tub/num_records', 'user/mode', 'recording'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording', 'web/buttons'],

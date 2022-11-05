@@ -101,7 +101,7 @@ class RemoteWebServer():
 
 class LocalWebController(tornado.web.Application):
 
-    def __init__(self, port=8887, mode='user'):
+    def __init__(self, port=8887, mode='user', suppress_zero_throttle_recording=True):
         '''
         Create and publish variables needed on many of
         the web handlers.
@@ -118,6 +118,7 @@ class LocalWebController(tornado.web.Application):
         self.recording = False
         self.recording_latch = None
         self.buttons = {}  # latched button values for processing
+        self.suppress_zero_throttle_recording = suppress_zero_throttle_recording
 
         self.port = port
         self.tub = None
@@ -213,7 +214,7 @@ class LocalWebController(tornado.web.Application):
             logger.debug(str(changes))
             self.loop.add_callback(lambda: self.update_wsclients(changes))
 
-        if self.throttle == 0:
+        if self.throttle == 0 and self.suppress_zero_throttle_recording:
             return self.angle, self.throttle, self.mode, False, buttons
         else:
             return self.angle, self.throttle, self.mode, self.recording, buttons        
