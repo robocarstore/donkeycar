@@ -186,13 +186,16 @@ class LocalWebController(tornado.web.Application):
             self.mode = self.mode_latch
             self.mode_latch = None
             changes["driveMode"] = self.mode
-        if recording is not None and self.recording != recording:
-            self.recording = recording
-            changes["recording"] = self.recording
-        if self.recording_latch is not None:
-            self.recording = self.recording_latch;
-            self.recording_latch = None;
-            changes["recording"] = self.recording;
+#         if recording is not None and self.recording != recording:
+#             self.recording = recording
+#             changes["recording"] = self.recording
+#         if self.recording_latch is not None:
+#             self.recording = self.recording_latch;
+#             self.recording_latch = None;
+#             changes["recording"] = self.recording;
+        changes["recording"] = self.recording;
+        changes["throttle"] = self.throttle
+        changes["angle"] = self.angle
 
         # Send record count to websocket clients
         if (self.num_records is not None and self.recording is True):
