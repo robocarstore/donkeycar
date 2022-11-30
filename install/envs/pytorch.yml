@@ -1,4 +1,6 @@
 channels:
+  - defaults
+  - conda-forge
   - pytorch
   - fastai
 
