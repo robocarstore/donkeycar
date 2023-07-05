@@ -186,13 +186,13 @@ class LocalWebController(tornado.web.Application):
             self.mode = self.mode_latch
             self.mode_latch = None
             changes["driveMode"] = self.mode
-#         if recording is not None and self.recording != recording:
-#             self.recording = recording
-#             changes["recording"] = self.recording
-#         if self.recording_latch is not None:
-#             self.recording = self.recording_latch;
-#             self.recording_latch = None;
-#             changes["recording"] = self.recording;
+        if recording is not None and self.recording != recording:
+            self.recording = recording
+            changes["recording"] = self.recording
+        if self.recording_latch is not None:
+            self.recording = self.recording_latch;
+            self.recording_latch = None;
+            changes["recording"] = self.recording;
         changes["recording"] = self.recording;
         changes["throttle"] = self.throttle
         changes["angle"] = self.angle
@@ -217,10 +217,10 @@ class LocalWebController(tornado.web.Application):
             logger.debug(str(changes))
             self.loop.add_callback(lambda: self.update_wsclients(changes))
 
-        if self.throttle == 0 and self.suppress_zero_throttle_recording:
-            return self.angle, self.throttle, self.mode, False, buttons
-        else:
-            return self.angle, self.throttle, self.mode, self.recording, buttons        
+        # if self.throttle == 0 and self.suppress_zero_throttle_recording and recording is None:
+        #     return self.angle, self.throttle, self.mode, False, buttons
+        # else:
+        return self.angle, self.throttle, self.mode, self.recording, buttons
 
     def run(self, img_arr=None, num_records=0, mode=None, recording=None):
         return self.run_threaded(img_arr, num_records, mode, recording)
