@@ -3,8 +3,14 @@ import cv2
 import time
 import random
 import collections
+"""
 from edgetpu.detection.engine import DetectionEngine
 from edgetpu.utils import dataset_utils
+"""
+from pycoral.utils.dataset import read_label_file
+from pycoral.adapters import common
+from pycoral.utils.edgetpu import make_interpreter
+
 from PIL import Image
 from matplotlib import cm
 import os
@@ -34,8 +40,9 @@ class StopSignDetector(object):
         self.download_file(LABEL_URL, LABEL_FILE_NAME)
 
         self.last_5_scores = collections.deque(np.zeros(5), maxlen=5)
-        self.engine = DetectionEngine(MODEL_FILE_NAME)
-        self.labels = dataset_utils.read_label_file(LABEL_FILE_NAME)
+        self.interpreter = make_interpreter(MODEL_FILE_NAME)
+        self.interpreter.allocate_tensors()
+        self.labels = read_label_file(LABEL_FILE_NAME)
 
         self.STOP_SIGN_CLASS_ID = 12
         self.min_score = min_score
@@ -58,23 +65,27 @@ class StopSignDetector(object):
     '''
     def detect_stop_sign (self, img_arr):
         img = self.convertImageArrayToPILImage(img_arr)
-
-        ans = self.engine.detect_with_image(img,
-                                          threshold=self.min_score,
-                                          keep_aspect_ratio=True,
-                                          relative_coord=False,
-                                          top_k=3)
+        resized_img = img.resize(common.input_size(self.interpreter), Image.Resampling.LANCZOS)
+        common.set_input(self.interpreter, resized_img)
+        self.interpreter.invoke()
+        ans = [dict(zip(
+            ['detection_boxes', 'detection_classes', 'detection_scores'], obj))
+              for obj in zip(
+                  common.output_tensor(self.interpreter, 0).copy()[0],
+                  common.output_tensor(self.interpreter, 1).copy()[0],
+                  common.output_tensor(self.interpreter, 2).copy()[0]
+              )]
         max_score = 0
         traffic_light_obj = None
         if ans:
             for obj in ans:
-                if (obj.label_id == self.STOP_SIGN_CLASS_ID):
+                if (obj['detection_classes'] == self.STOP_SIGN_CLASS_ID):
                     if self.debug:
                         print("stop sign detected, score = {}".format(obj.score))
-                    if (obj.score > max_score):
-                        print(obj.bounding_box)
+                    if (obj['detection_scores'] > max_score):
+                        print(obj['detection_boxes'])
                         traffic_light_obj = obj
-                        max_score = obj.score
+                        max_score = obj['detection_scores']
 
         # if traffic_light_obj:
         #     self.last_5_scores.append(traffic_light_obj.score)
@@ -93,7 +104,7 @@ class StopSignDetector(object):
         return traffic_light_obj
 
     def draw_bounding_box(self, traffic_light_obj, img_arr):
-        xmargin = (traffic_light_obj.bounding_box[1][0] - traffic_light_obj.bounding_box[0][0]) *0.1
+        """xmargin = (traffic_light_obj.bounding_box[1][0] - traffic_light_obj.bounding_box[0][0]) *0.1
 
         traffic_light_obj.bounding_box[0][0] = traffic_light_obj.bounding_box[0][0] + xmargin
         traffic_light_obj.bounding_box[1][0] = traffic_light_obj.bounding_box[1][0] - xmargin
@@ -101,10 +112,18 @@ class StopSignDetector(object):
         ymargin = (traffic_light_obj.bounding_box[1][1] - traffic_light_obj.bounding_box[0][1]) *0.05
 
         traffic_light_obj.bounding_box[0][1] = traffic_light_obj.bounding_box[0][1] + ymargin
-        traffic_light_obj.bounding_box[1][1] = traffic_light_obj.bounding_box[1][1] - ymargin
-
-        cv2.rectangle(img_arr, tuple(traffic_light_obj.bounding_box[0].astype(int)),
-                        tuple(traffic_light_obj.bounding_box[1].astype(int)), (0, 255, 0), 2)
+        traffic_light_obj.bounding_box[1][1] = traffic_light_obj.bounding_box[1][1] - ymargin"""
+        box = traffic_light_obj['detection_boxes']
+        height, width = img_arr.shape[:2]
+        pt1 = ( (box[1]*width).astype(int),
+                (box[0]*height).astype(int))
+        pt2 = ( (box[3]*width).astype(int), 
+                (box[2]*height).astype(int))
+        cv2.rectangle(img_arr, pt1, pt2, (0, 255, 0), 2)
+        """cv2.rectangle(img_arr, tuple(traffic_light_obj.bounding_box[0].astype(int)),
+                        tuple(traffic_light_obj.bounding_box[1].astype(int)), (0, 255, 0), 2)"""
+        print(pt1)
+        print(pt2)
 
     def run(self, img_arr, throttle, debug=False):
         if img_arr is None:
