@@ -37,7 +37,7 @@ setup(name='donkeycar',
           ],
       },
       install_requires=[
-          'numpy',
+          'numpy==1.24.2',
           'pillow',
           'docopt',
           'tornado',
