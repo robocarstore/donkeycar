@@ -464,9 +464,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
     #
     # Setup drivetrain
-    #
-    add_drivetrain(V, cfg)
-
+    #    
+    drive_train = add_drivetrain(V, cfg)    
 
     #
     # OLED display setup
@@ -563,8 +562,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)
     if has_input_controller:
         print("You can now move your controller to drive your car.")
-        if isinstance(ctr, JoystickController):
-            ctr.set_tub(tub_writer.tub)
+        ctr.set_tub(tub_writer.tub)
+        ctr.drive_train = drive_train
+        ctr.drive_train_type = cfg.DRIVE_TRAIN_TYPE
+
+        if isinstance(ctr, JoystickController):            
             ctr.print_controls()
 
     # run the vehicle
@@ -925,6 +927,7 @@ def add_imu(V, cfg):
 # Drive train setup
 #
 def add_drivetrain(V, cfg):
+    drive_train = None    
 
     if (not cfg.DONKEY_GYM) and cfg.DRIVE_TRAIN_TYPE != "MOCK":
         from donkeycar.parts import actuator, pins
@@ -1116,6 +1119,10 @@ def add_drivetrain(V, cfg):
                                    min_pulse=cfg.THROTTLE_REVERSE_PWM)
             V.add(steering, inputs=['steering'], threaded=True)
             V.add(throttle, inputs=['throttle'], threaded=True)
+
+            drive_train = dict()
+            drive_train['steering'] = steering
+            drive_train['throttle'] = throttle
     
         elif cfg.DRIVE_TRAIN_TYPE == "VESC":
             from donkeycar.parts.actuator import VESC
@@ -1130,6 +1137,8 @@ def add_drivetrain(V, cfg):
                           cfg.VESC_STEERING_OFFSET
                         )
             V.add(vesc, inputs=['steering', 'throttle'])
+
+    return drive_train
 
 
 if __name__ == '__main__':

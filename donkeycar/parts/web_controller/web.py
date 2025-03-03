@@ -119,6 +119,7 @@ class LocalWebController(tornado.web.Application):
         self.buttons = {}  # latched button values for processing
 
         self.port = port
+        self.tub = None
 
         self.num_records = 0
         self.wsclients = []
@@ -129,6 +130,7 @@ class LocalWebController(tornado.web.Application):
             (r"/", RedirectHandler, dict(url="/drive")),
             (r"/drive", DriveAPI),
             (r"/wsDrive", WebSocketDriveAPI),
+            (r"/wsCopilot", WebSocketCopilotAPI),
             (r"/wsCalibrate", WebSocketCalibrateAPI),
             (r"/calibrate", CalibrateHandler),
             (r"/video", VideoAPI),
@@ -216,6 +218,10 @@ class LocalWebController(tornado.web.Application):
     def run(self, img_arr=None, num_records=0, mode=None, recording=None):
         return self.run_threaded(img_arr, num_records, mode, recording)
 
+    def set_tub(self, tub):
+        self.tub = tub
+
+
     def shutdown(self):
         pass
 
@@ -300,6 +306,40 @@ class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
         logger.info("Client disconnected")
         self.application.wsclients.remove(self)
 
+class WebSocketCopilotAPI(tornado.websocket.WebSocketHandler):
+    def check_origin(self, origin):
+        return True
+
+    def open(self):
+        logger.info("New client connected")
+        self.application.wsclients.append(self)
+
+    def on_message(self, message):
+        data = json.loads(message)
+
+        if self.application.drive_train:
+            if data.get('THROTTLE_FORWARD_PWM') is not None:
+                logger.info(f"setting THROTTLE_FORWARD_PWM to {data['THROTTLE_FORWARD_PWM']}")
+                self.application.drive_train['throttle'].max_pulse = data['THROTTLE_FORWARD_PWM']
+
+            if data.get('STEERING_LEFT_PWM') is not None:
+                logger.info(f"setting STEERING_LEFT_PWM to {data['STEERING_LEFT_PWM']}")
+                self.application.drive_train['steering'].left_pulse = data['STEERING_LEFT_PWM']
+
+            if data.get('STEERING_RIGHT_PWM') is not None:
+                logger.info(f"setting STEERING_RIGHT_PWM to {data['STEERING_RIGHT_PWM']}")
+                self.application.drive_train['steering'].right_pulse = data['STEERING_RIGHT_PWM']
+           
+        else:
+            print(f"ignoring data {data} because drive train is None")
+
+        if data.get('deleteLastXSecond') is not None:
+            logger.info(f"deleteing last {data['deleteLastXSecond'] * 20} records")
+            self.application.tub.delete_last_n_records(data['deleteLastXSecond'] * 20)
+              
+    def on_close(self):
+        logger.info("WsCopilot client disconnected")
+        self.application.wsclients.remove(self)
 
 class WebSocketCalibrateAPI(tornado.websocket.WebSocketHandler):
     def check_origin(self, origin):
@@ -322,21 +362,26 @@ class WebSocketCalibrateAPI(tornado.websocket.WebSocketHandler):
         if 'config' in data:
             config = data['config']
             if self.application.drive_train_type == "PWM_STEERING_THROTTLE" \
-                or self.application.drive_train_type == "I2C_SERVO":
-                if 'STEERING_LEFT_PWM' in config:
-                    self.application.drive_train['steering'].left_pulse = config['STEERING_LEFT_PWM']
+                or self.application.drive_train_type == "I2C_SERVO" \
+                or self.application.drive_train_type == "PIGPIO_PWM":
+                
+                if self.application.drive_train:
+                    if 'STEERING_LEFT_PWM' in config:
+                        self.application.drive_train['steering'].left_pulse = config['STEERING_LEFT_PWM']
 
-                if 'STEERING_RIGHT_PWM' in config:
-                    self.application.drive_train['steering'].right_pulse = config['STEERING_RIGHT_PWM']
+                    if 'STEERING_RIGHT_PWM' in config:
+                        self.application.drive_train['steering'].right_pulse = config['STEERING_RIGHT_PWM']
 
-                if 'THROTTLE_FORWARD_PWM' in config:
-                    self.application.drive_train['throttle'].max_pulse = config['THROTTLE_FORWARD_PWM']
+                    if 'THROTTLE_FORWARD_PWM' in config:
+                        self.application.drive_train['throttle'].max_pulse = config['THROTTLE_FORWARD_PWM']
 
-                if 'THROTTLE_STOPPED_PWM' in config:
-                    self.application.drive_train['throttle'].zero_pulse = config['THROTTLE_STOPPED_PWM']
+                    if 'THROTTLE_STOPPED_PWM' in config:
+                        self.application.drive_train['throttle'].zero_pulse = config['THROTTLE_STOPPED_PWM']
 
-                if 'THROTTLE_REVERSE_PWM' in config:
-                    self.application.drive_train['throttle'].min_pulse = config['THROTTLE_REVERSE_PWM']
+                    if 'THROTTLE_REVERSE_PWM' in config:
+                        self.application.drive_train['throttle'].min_pulse = config['THROTTLE_REVERSE_PWM']
+                else:
+                    print(f"ignoring config {config} because drive train is None")
 
             elif self.application.drive_train_type == "MM1":
                 if ('MM1_STEERING_MID' in config) and (config['MM1_STEERING_MID'] != 0):
