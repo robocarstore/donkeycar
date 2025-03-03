@@ -130,7 +130,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     # - it will optionally add any configured 'joystick' controller
     #
     has_input_controller = hasattr(cfg, "CONTROLLER_TYPE") and cfg.CONTROLLER_TYPE != "mock"
-    ctr = add_user_controller(V, cfg, use_joystick)
+    web_ctr, ctr = add_user_controller(V, cfg, use_joystick)
 
     #
     # convert 'user/steering' to 'user/angle' to be backward compatible with deep learning data
@@ -562,9 +562,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)
     if has_input_controller:
         print("You can now move your controller to drive your car.")
-        ctr.set_tub(tub_writer.tub)
-        ctr.drive_train = drive_train
-        ctr.drive_train_type = cfg.DRIVE_TRAIN_TYPE
+        web_ctr.set_tub(tub_writer.tub)
+        web_ctr.drive_train = drive_train
+        web_ctr.drive_train_type = cfg.DRIVE_TRAIN_TYPE
 
         if isinstance(ctr, JoystickController):            
             ctr.print_controls()
@@ -696,11 +696,13 @@ def add_user_controller(V, cfg, use_joystick, input_image='ui/image_array'):
     # This web controller will create a web server that is capable
     # of managing steering, throttle, and modes, and more.
     #
-    ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
-    V.add(ctr,
+    web_ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
+    V.add(web_ctr,
           inputs=[input_image, 'tub/num_records', 'user/mode', 'recording'],
           outputs=['user/steering', 'user/throttle', 'user/mode', 'recording', 'web/buttons'],
           threaded=True)
+
+    ctr = None
 
     #
     # also add a physical controller if one is configured
@@ -755,7 +757,7 @@ def add_user_controller(V, cfg, use_joystick, input_image='ui/image_array'):
                 outputs=['user/steering', 'user/throttle',
                          'user/mode', 'recording'],
                 threaded=True)
-    return ctr
+    return web_ctr, ctr
 
 
 def add_simulator(V, cfg):
